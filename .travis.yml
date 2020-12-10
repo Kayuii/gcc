@@ -39,3 +39,5 @@ script:
   - docker pull --platform "linux/arm/v6" kayuii/gcc:latest
   - docker tag kayuii/gcc:latest kayuii/gcc:armel
   - docker push kayuii/gcc:armel
+  - docker build -t kayuii/gcc:xilinx -f xilinx/Dockerfile ./xilinx/
+  - docker push kayuii/gcc:xilinx
