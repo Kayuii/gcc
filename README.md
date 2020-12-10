@@ -2,7 +2,7 @@
 
 ## 1. init docker base images
 ```
-$ docker buildx build --platform linux/amd64,linux/386,linux/arm64,linux/arm/v7,linux/arm/v6 -t kayuii/gcc:base -f ./Dockerfile.base . --push
+$ docker buildx build --platform linux/amd64,linux/386,linux/arm64,linux/arm/v7,linux/arm/v6 -t kayuii/gcc:base -f ./Dockerfile . --push
 ```
 how to use [buildx](https://github.com/docker/buildx/blob/master/README.md)
 
