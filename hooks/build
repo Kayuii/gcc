@@ -3,9 +3,10 @@ set -x
 ls /proc/sys
 ls /proc/sys/fs
 ls /proc/sys/fs/binfmt_misc
-# docker run --rm --privileged tonistiigi/binfmt:latest --install all
+docker run --rm --privileged multiarch/qemu-user-static --reset -p yes
+docker run --rm --privileged tonistiigi/binfmt:latest --install all
 docker buildx version
 docker buildx create --use --name=multipleplatforms --driver docker-container --platform linux/amd64,linux/arm64,linux/ppc64le,linux/s390x,linux/386,linux/arm/v7,linux/arm/v6
-docker buildx ls
+docker buildx inspect --bootstrap
 set +x
 docker buildx build --push --platform linux/amd64,linux/386,linux/arm64,linux/arm/v7,linux/arm/v6 -f $DOCKERFILE_PATH -t $IMAGE_NAME . 
