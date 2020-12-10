@@ -1,6 +1,6 @@
 #!/bin/bash
 set -x
-# docker run --rm --privileged tonistiigi/binfmt:latest --install all
+docker run --rm --privileged tonistiigi/binfmt:latest --install all
 docker buildx version
 docker buildx create --use --name=multipleplatforms --driver docker-container
 docker buildx ls
