@@ -1,5 +1,8 @@
 #!/bin/bash
 set -x
+ls /proc/sys
+ls /proc/sys/fs
+ls /proc/sys/fs/binfmt_misc
 docker run --rm --privileged tonistiigi/binfmt:latest --install all
 docker buildx version
 docker buildx create --use --name=multipleplatforms --driver docker-container
