@@ -41,3 +41,8 @@ script:
   - docker push kayuii/gcc:armel
   - docker build -t kayuii/gcc:xilinx -f xilinx/Dockerfile ./xilinx/
   - docker push kayuii/gcc:xilinx
+  - docker tag kayuii/gcc:xilinx kayuii/xilinx:amd64
+  - docker build -t kayuii/gcc:xilinx -f xilinx/Dockerfile.i385 ./xilinx/
+  - docker tag kayuii/gcc:xilinx kayuii/xilinx:i386
+  - docker push kayuii/xilinx:amd64
+  - docker push kayuii/xilinx:i386
