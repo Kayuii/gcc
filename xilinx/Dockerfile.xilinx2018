@@ -1,0 +1,65 @@
+FROM debian:stretch
+RUN echo 'deb http://deb.debian.org/debian stretch-backports main' > /etc/apt/sources.list.d/backports.list
+
+
+ENV LANG=en_US.UTF-8 LANGUAGE=en_US.UTF-8 LC_CTYPE=en_US.UTF-8 LC_ALL=C DEBIAN_FRONTEND=noninteractive
+#install dependences:
+RUN dpkg --add-architecture i386 && apt-get update \
+    && DEBIAN_FRONTEND=noninteractive apt-get install -y --no-install-recommends apt-utils \
+    && DEBIAN_FRONTEND=noninteractive apt-get install -y -q \ 
+        python python3 make zlib1g-dev \ 
+        tar xinetd build-essential gcc \
+        sudo tofrodos iproute2 gawk \
+        net-tools expect libncurses5-dev tftpd \
+        libssl-dev flex bison libselinux1 \
+        gnupg wget socat gcc-multilib \
+        libsdl1.2-dev libglib2.0-dev lib32z1-dev zlib1g:i386 \
+        libgtk2.0-0 screen pax diffstat \
+        xvfb xterm texinfo gzip \
+        unzip cpio chrpath autoconf lsb-release \
+        libtool libtool-bin kmod locales locales-all \
+        bc u-boot-tools git \
+    && cd /tmp \
+    && wget http://archive.ubuntu.com/ubuntu/pool/main/b/bash/bash_4.3-14ubuntu1_amd64.deb  \
+    && apt-get install ./bash_4.3-14ubuntu1_amd64.deb -y --allow-downgrades \
+    && rm ./bash_4.3-14ubuntu1_amd64.deb \
+    && rm /bin/sh \
+    && ln -s /bin/bash /bin/sh \
+    && cd / \
+    && apt-get clean && rm -rf /var/lib/apt/lists/* /tmp/* /var/tmp/*
+
+RUN locale-gen en_US.UTF-8 && update-locale
+
+#make a Vivado user
+RUN adduser --disabled-password --gecos '' vivado \
+    && usermod -aG sudo vivado \
+    && echo "vivado ALL=(ALL) NOPASSWD: ALL" >> /etc/sudoers
+
+ARG VERSION=2018.1
+ARG FILE=petalinux-v2018.1-final-installer.run
+
+ADD accept-eula.sh /
+ADD ${FILE} /
+
+RUN chmod a+x /${FILE} /accept-eula.sh  \
+    && mkdir -p /opt/xilinx/petalinux/  \
+    && chmod 777 /tmp /opt/xilinx/petalinux/ \
+    && chown -R vivado:sudo /tmp /opt/xilinx/petalinux/ \
+    && cd /tmp  \
+    && sudo -u vivado /accept-eula.sh /${FILE} /opt/xilinx/petalinux/  \
+    && rm -f /${FILE} /accept-eula.sh 
+
+# FROM kayuii/gcc:i386
+
+# COPY --from=builder /opt/xilinux/ /opt/xilinux/
+
+# add vivado tools to path, ignore the warning
+RUN echo "source /opt/xilinx/petalinux/settings.sh  > /dev/null 2>&1" >> /root/.bashrc
+
+# FROM kayuii/gcc:i386
+
+# COPY --from=builder /opt/xilinux/ /usr/local/xilinux/
+
+# RUN ln -sfn /usr/local/xilinux/bin/* /usr/local/bin/ 
+
+# WORKDIR /opt/
