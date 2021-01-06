@@ -1,0 +1,46 @@
+FROM ubuntu:xenial
+
+ENV LANG=en_US.UTF-8 LANGUAGE=en_US.UTF-8 LC_CTYPE=en_US.UTF-8 LC_ALL=C DEBIAN_FRONTEND=noninteractive
+RUN sed -i "s@http://.*archive.ubuntu.com@http://hk.archive.ubuntu.com@g" /etc/apt/sources.list \
+ && sed -i "s@http://.*security.ubuntu.com@http://hk.archive.ubuntu.com@g" /etc/apt/sources.list
+#install dependences:
+RUN dpkg --add-architecture i386 && apt-get update \
+    && DEBIAN_FRONTEND=noninteractive apt-get install -y --no-install-recommends apt-utils \ 
+    && apt-get install -y \
+    iproute2 gawk python3 python build-essential \
+    gcc git make net-tools libncurses5-dev tftpd \
+    zlib1g-dev libssl-dev flex bison libselinux1 \
+    gnupg wget git-core diffstat chrpath socat \
+    xterm autoconf libtool tar unzip texinfo \
+    zlib1g-dev gcc-multilib automake zlib1g:i386 \
+    screen pax gzip cpio python3-pip python3-pexpect \
+    xz-utils debianutils iputils-ping python3-git \
+    python3-jinja2 libegl1-mesa libsdl1.2-dev pylint3 \
+    locales locales-all u-boot-tools sudo \
+    && apt-get clean && rm -rf /var/lib/apt/lists/* /tmp/* /var/tmp/*
+
+    # RUN dpkg --add-architecture i386 && apt-get update \
+    # && DEBIAN_FRONTEND=noninteractive apt-get install -y --no-install-recommends apt-utils \ 
+    # && apt-get install -y \
+    # python python3 make zlib1g-dev \ 
+    # tar xinetd build-essential gcc \
+    # sudo tofrodos iproute2 gawk \
+    # net-tools expect libncurses5-dev tftpd \
+    # libssl-dev flex bison libselinux1 \
+    # gnupg wget socat gcc-multilib \
+    # libsdl1.2-dev libglib2.0-dev lib32z1-dev zlib1g:i386 \
+    # screen pax diffstat \
+    # xvfb xterm texinfo gzip \
+    # unzip chrpath autoconf \
+    # libtool libtool-bin kmod locales locales-all \
+    # bc u-boot-tools git  \
+    # && cd /tmp \
+    # && wget http://archive.ubuntu.com/ubuntu/pool/main/b/bash/bash_4.3-14ubuntu1_amd64.deb  \
+    # && apt-get install ./bash_4.3-14ubuntu1_amd64.deb -y --allow-downgrades \
+    # && rm ./bash_4.3-14ubuntu1_amd64.deb \
+    # && rm /bin/sh \
+    # && ln -s /bin/bash /bin/sh \
+    # && cd / \
+    # && apt-get clean && rm -rf /var/lib/apt/lists/* /tmp/* /var/tmp/*
+
+RUN locale-gen en_US.UTF-8 && update-locale
