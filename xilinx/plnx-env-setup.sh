@@ -32,6 +32,9 @@ if [ $currentUser != "root" ]; then echo "FAILED! \r\n Please re-run this script
 if [[ $(echo $osPrettyName | grep buntu) ]]; then
 	hostOS="ubuntu";
 	#echo "Running on Ubuntu";
+elif [[ $(echo $osPrettyName | grep Debian) ]]; then
+	hostOS="debian";
+	#echo "Running on Ubuntu";
 elif [[ $(echo $osPrettyName | grep CentOS) ]]; then
 	hostOS="centos";
 	echo "Running on CentOS version $centosVersion";
@@ -40,7 +43,7 @@ elif [[ $(echo $osPrettyName | grep "Red Hat") ]]; then
 	#echo "Running on Red Hat";
 else
 	echo "ERROR: Cannot determine host operating system!"
-	echo "This script is only supported on Ubuntu, CentOS, and RHEL Linux distribution!"
+	echo "This script is only supported on Ubuntu/Debian, CentOS, and RHEL Linux distribution!"
 	exit 1;	
 fi;
 
@@ -49,7 +52,7 @@ debPackages=(iproute2 gawk python3 python build-essential gcc git make net-tools
 
 rhelPackages=(net-tools gawk make wget tar bzip2 gzip python3 unzip perl patch diffutils diffstat git cpp gcc gcc-c++ glibc-devel texinfo chrpath socat perl-Data-Dumper perl-Text-ParseWords perl-Thread-Queue python3-pip python3-GitPython python3-jinja2 python3-pexpect xz which SDL-devel xterm autoconf libtool.x86_64 zlib-devel automake glib2-devel zlib ncurses-devel openssl-devel dos2unix flex bison glibc.i686 glibc.x86_64 screen pax glibc-devel.i686 compat-libstdc++-33.i686 libstdc++.i686 libstdc++.x86_64);
 
-if [ $hostOS == "ubuntu" ]; then
+if [ $hostOS == "ubuntu" ] || [  $hostOS == "debian" ]; then
 	packageList=(${debPackages[@]});
 elif [ $hostOS == "rhel" ]; then
 	packageList=(${rhelPackages[@]});
@@ -80,8 +83,8 @@ if [ $hostOS == "ubuntu" ]; then
 fi;
 
 #start building the package installation command line
-if [ $hostOS == "ubuntu" ]; then
-	packageCommand="apt";
+if [ $hostOS == "ubuntu" ] || [  $hostOS == "debian" ]; then
+	packageCommand="apt-get";
 elif [ $hostOS == "rhel" ]; then
 	packageCommand="yum";
 elif [ $hostOS == "centos" ]; then
@@ -92,17 +95,19 @@ fi;
 if [ $hostOS == "ubuntu" ]; then
 	echo -n "NOTE: Check for x86 package access..."
 	foreignArchitecture=`dpkg --print-foreign-architectures | grep i386`;
-	if [ $foreignArchitecture == "i386" ]; then 
+	if [ "$foreignArchitecture" == "i386" ]; then 
 		echo "FOUND!"; 
 	else 
 		echo "NOT FOUND! Now adding i386 foreign archiecture to dpkg";
-		sudo dpkg --add-architexture i386; 
+		sudo dpkg --add-architecture i386; 
 	fi;
 fi;
 
 #make sure the package lists are up-to-date
 echo "NOTE: Updating the package lists...";
-if [ $hostOS == "ubuntu" ]; then
+if [ $hostOS == "ubuntu" ] || [  $hostOS == "debian" ]; then
+	export DEBIAN_FRONTEND=noninteractive;
+	export DEBCONF_NONINTERACTIVE_SEEN=true;
 	sudo $packageCommand update;
 elif [ $hostOS == "rhel" ]; then
 	sudo $packageCommand makecache;
@@ -117,7 +122,7 @@ for package in "${packageList[@]}"; do
 	echo -n "NOTE: Checking to see if package is already installed..."
 	installPackage=0;
 	
-	if [ $hostOS == "ubuntu" ]; then
+	if [ $hostOS == "ubuntu" ] || [  $hostOS == "debian" ]; then
 		if [[ $($packageCommand -qq list $package | grep installed) ]]; then
 			echo "INSTALLED! Skipping."
 		else
@@ -151,6 +156,21 @@ for package in "${packageList[@]}"; do
 	echo -e "######\n";
 
 done;
+
+
+#DEBIAN ONLY -- Install bash4.3 to fit wired vivado software && Replace the bash
+if [ $hostOS == "debian" ]; then
+	echo -n "NOTE: Check for BASH version ..."
+	if echo `bash --version` | grep '4.3' ; then 
+		echo "FOUND!"; 
+	else 
+		echo "NOT FOUND! Install bash4.3 to fit wired vivado software && Replace the bash";
+		cd /tmp \
+		&& wget http://archive.ubuntu.com/ubuntu/pool/main/b/bash/bash_4.3-14ubuntu1_amd64.deb  \
+		&& apt-get install ./bash_4.3-14ubuntu1_amd64.deb -y --allow-downgrades \
+		&& rm ./bash_4.3-14ubuntu1_amd64.deb 
+	fi;
+fi;
 
 # For CentOS/RHEL version 7 install GitPython jinja2 using pip3 commands
 if [ $hostOS == "rhel" ] || [ $hostOS == "centos" ] && [ $debug -eq 0 ]; then
