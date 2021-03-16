@@ -18,7 +18,7 @@ RUN chmod a+x /${FILE}  \
 FROM kayuii/gcc:amd64
 
 RUN dpkg --add-architecture i386 && apt-get update \
-    && apt-get install -y lib32z1 \
+    && apt-get install -y lib32z1 curl git cmake \
     libbz2-1.0:i386 lib32stdc++6 zlib1g:i386 \
     && apt-get clean && rm -rf /var/lib/apt/lists/* /tmp/* /var/tmp/*
 

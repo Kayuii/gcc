@@ -54,21 +54,30 @@ RUN chmod a+x /${FILE} /accept-eula-petalinux.sh  \
 
     # sudo -u vivado /accept-eula-petalinux.sh /petalinux-v2018.1-final-installer.run /opt/xilinx/petalinux/ 
 
-# FROM kayuii/gcc:i386
+FROM kayuii/gcc:arm64
 
-# COPY --from=builder /opt/xilinux/ /opt/xilinux/
+COPY --from=builder /opt/xilinux/ /usr/local/xilinux/
 
-# add vivado tools to path, ignore the warning
 RUN echo "source /opt/xilinx/petalinux/settings.sh  > /dev/null 2>&1" >> /root/.bashrc \
  && source /opt/xilinx/petalinux/settings.sh \
  && petalinux-util --webtalk off
 
-RUN apt-get update \
+RUN dpkg --add-architecture i386 && apt-get update \
+ && DEBIAN_FRONTEND=noninteractive apt-get install -y --no-install-recommends apt-utils \
  && DEBIAN_FRONTEND=noninteractive apt-get install -y -q \ 
-    curl cmake \
- && apt-get clean && rm -rf /var/lib/apt/lists/* /tmp/* /var/tmp/* \
-
-# COPY --from=builder /opt/xilinux/ /usr/local/xilinux/
+    python curl wget cmake make git \
+    gcc autoconf build-essential xvfb xterm gawk  \
+    zlib1g-dev zlib1g:i386 libtool libtool-bin \
+    libsdl1.2-dev libglib2.0-dev automake \
+    u-boot-tools \
+ && cd /tmp \
+ && wget http://archive.ubuntu.com/ubuntu/pool/main/b/bash/bash_4.3-14ubuntu1_amd64.deb  \
+ && apt-get install ./bash_4.3-14ubuntu1_amd64.deb -y --allow-downgrades \
+ && rm ./bash_4.3-14ubuntu1_amd64.deb \
+ && rm /bin/sh \
+ && ln -s /bin/bash /bin/sh \
+ && cd / \
+ && apt-get clean  && rm -rf /var/lib/apt/lists/* /tmp/* /var/tmp/* 
 
 # RUN ln -sfn /usr/local/xilinux/bin/* /usr/local/bin/ 
 

@@ -3,7 +3,7 @@ set timeout -1
 set install_dir [lindex $argv 1]
 set installer [lindex $argv 0]
 
-spawn $installer -p "arm" -d $install_dir
+spawn $installer $install_dir
 expect "Press Enter to display the license agreements"
 send "\r"
 set timeout 2
