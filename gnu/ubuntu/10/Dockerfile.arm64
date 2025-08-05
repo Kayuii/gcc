@@ -1,4 +1,4 @@
-FROM kayuii/alpine-glibc:2.23 as downloader
+FROM kayuii/alpine-glibc:v2.23 as downloader
 LABEL maintainer "zcsevcik@gmail.com"
 
 RUN apk --update --no-cache upgrade && \
