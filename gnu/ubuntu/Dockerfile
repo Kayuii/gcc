@@ -8,12 +8,21 @@ ARG DOWNLOAD_URL=https://developer.arm.com/tools-and-software/open-source-softwa
 
 RUN apk --update --no-cache upgrade && \
     apk --update --no-cache add w3m wget openssl ca-certificates && \
-    GCCARM_LINK="$(w3m -o display_link_number=1 -dump "${DOWNLOAD_URL}" | \
-    grep -m1 "/gcc-arm-${GCC_VERSION}.*-${ARCH}.*arm-none-linux-gnueabihf\.tar\.xz\?" | \
-    sed -e 's/^\[[0-9]\+\] //')" && \
+    if [ "$GCC_VERSION" -ge 11 ]; then \
+        echo "使用新版本文件名格式 (arm-gnu-toolchain)"; \
+        GCCARM_LINK="$(w3m -o display_link_number=1 -dump "${DOWNLOAD_URL}" | \
+        grep -m1 "/arm-gnu-toolchain-${GCC_VERSION}.*-${ARCH}.*arm-none-linux-gnueabihf\.tar\.xz\?" | \
+        sed -e 's/^\[[0-9]\+\] //')"; \
+    else \
+        echo "使用旧版本文件名格式 (gcc-arm)"; \
+        GCCARM_LINK="$(w3m -o display_link_number=1 -dump "${DOWNLOAD_URL}" | \
+        grep -m1 "/gcc-arm-${GCC_VERSION}.*-${ARCH}.*arm-none-linux-gnueabihf\.tar\.xz\?" | \
+        sed -e 's/^\[[0-9]\+\] //')"; \
+    fi && \
+    echo "找到的下载链接: $GCCARM_LINK" && \
     wget -O /tmp/gcc-arm-${ARCH}-arm-linux-gnueabihf.tar.xz ${GCCARM_LINK}
 
-FROM ubuntu:20.04
+FROM ubuntu:16.04
 
 LABEL maintainer "577738@qq.com"
 
