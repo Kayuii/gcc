@@ -2,7 +2,7 @@
 
 # 使用说明
 if [ "$1" = "-h" ] || [ "$1" = "--help" ]; then
-    echo "使用方法: $0 [ARCH] [GCC_VERSION] [--push]"
+    echo "使用方法: $0 [ARCH] [GCC_VERSION] [TARGET] [--push]"
     echo "支持的架构:"
     echo "  arm64    -> aarch64 (默认)"
     echo "  amd64    -> x86_64"
@@ -11,6 +11,10 @@ if [ "$1" = "-h" ] || [ "$1" = "--help" ]; then
     echo "  8, 9, 10 (旧版本，使用legacy下载页面)"
     echo "  11, 12, 13, 14 (新版本，使用新下载页面，默认: 10)"
     echo ""
+    echo "支持的目标平台:"
+    echo "  arm32v7  -> arm-none-linux-gnueabihf (32位ARM，默认)"
+    echo "  arm64v8  -> aarch64-none-linux-gnu (64位ARM)"
+    echo ""
     echo "可选参数:"
     echo "  --push   构建完成后推送镜像到容器仓库"
     echo ""
@@ -18,16 +22,17 @@ if [ "$1" = "-h" ] || [ "$1" = "--help" ]; then
     echo "  REGISTRY_PREFIX  镜像仓库前缀 (默认: 空，例如: docker.io/username/)"
     echo ""
     echo "示例:"
-    echo "  $0                    # 使用默认: arm64 + gcc-10"
-    echo "  $0 amd64              # 使用 x86_64 + gcc-10"
-    echo "  $0 arm64 9            # 使用 aarch64 + gcc-9 (旧版本)"
-    echo "  $0 amd64 8            # 使用 x86_64 + gcc-8 (旧版本)"
-    echo "  $0 arm64 13           # 使用 aarch64 + gcc-13 (新版本)"
-    echo "  $0 amd64 14 --push    # 使用 x86_64 + gcc-14 并推送镜像"
+    echo "  $0                    # 使用默认: arm64 + gcc-10 + arm32v7"
+    echo "  $0 amd64              # 使用 x86_64 + gcc-10 + arm32v7"
+    echo "  $0 arm64 9            # 使用 aarch64 + gcc-9 + arm32v7 (旧版本)"
+    echo "  $0 amd64 8            # 使用 x86_64 + gcc-8 + arm32v7 (旧版本)"
+    echo "  $0 arm64 13           # 使用 aarch64 + gcc-13 + arm32v7 (新版本)"
+    echo "  $0 arm64 10 arm64v8   # 使用 aarch64 + gcc-10 + arm64v8"
+    echo "  $0 amd64 14 arm64v8 --push  # 使用 x86_64 + gcc-14 + arm64v8 并推送镜像"
     echo ""
     echo "推送到不同仓库:"
-    echo "  REGISTRY_PREFIX=docker.io/username/ $0 arm64 10 --push"
-    echo "  REGISTRY_PREFIX=registry.cn-hangzhou.aliyuncs.com/namespace/ $0 arm64 10 --push"
+    echo "  REGISTRY_PREFIX=docker.io/username/ $0 arm64 10 arm32v7 --push"
+    echo "  REGISTRY_PREFIX=registry.cn-hangzhou.aliyuncs.com/namespace/ $0 arm64 10 arm64v8 --push"
     exit 0
 fi
 
@@ -46,9 +51,10 @@ for arg in "$@"; do
     fi
 done
 
-# 设置架构和版本
+# 设置架构、版本和目标平台
 INPUT_ARCH="${ARGS[0]:-arm64}"
 GCC_VERSION="${ARGS[1]:-10}"
+TARGET="${ARGS[2]:-arm32v7}"
 
 # 从简化的架构名称映射到完整平台和目标架构
 case "$INPUT_ARCH" in
@@ -63,6 +69,21 @@ case "$INPUT_ARCH" in
     *)
         echo "不支持的架构: $INPUT_ARCH"
         echo "支持的架构: arm64, amd64"
+        exit 1
+        ;;
+esac
+
+# 验证目标平台并设置对应的目标三元组
+case "$TARGET" in
+    "arm32v7")
+        TARGET_TRIPLET="arm-none-linux-gnueabihf"
+        ;;
+    "arm64v8")
+        TARGET_TRIPLET="aarch64-none-linux-gnu"
+        ;;
+    *)
+        echo "不支持的目标平台: $TARGET"
+        echo "支持的目标平台: arm32v7, arm64v8"
         exit 1
         ;;
 esac
@@ -88,12 +109,14 @@ esac
 
 # 设置镜像标签
 REGISTRY_PREFIX="${REGISTRY_PREFIX:-docker.io/kayuii/}"
-IMAGE_TAG="${REGISTRY_PREFIX}gcc:${INPUT_ARCH}-${GCC_VERSION}"
+IMAGE_TAG="${REGISTRY_PREFIX}gcc:${INPUT_ARCH}-${GCC_VERSION}-${TARGET}"
 
 echo "输入架构: $INPUT_ARCH"
 echo "Docker平台: $PLATFORM"
 echo "编译目标架构: $ARCH"
 echo "GCC版本: $GCC_VERSION"
+echo "目标平台: $TARGET"
+echo "目标三元组: $TARGET_TRIPLET"
 echo "下载URL: $DOWNLOAD_URL"
 echo "推送镜像: $PUSH_IMAGE"
 echo "镜像标签: $IMAGE_TAG"
@@ -104,6 +127,7 @@ podman build \
   --build-arg ARCH=$ARCH \
   --build-arg GCC_VERSION=$GCC_VERSION \
   --build-arg DOWNLOAD_URL=$DOWNLOAD_URL \
+  --build-arg TARGET_TRIPLET=$TARGET_TRIPLET \
   --tag $IMAGE_TAG \
   --file gnu/ubuntu/Dockerfile \
   gnu/ubuntu
@@ -131,7 +155,7 @@ if [ $? -eq 0 ]; then
             echo "   当前标签: $IMAGE_TAG"
             echo ""
             echo "3. 设置正确的仓库前缀："
-            echo "   REGISTRY_PREFIX=docker.io/yourusername/ $0 $INPUT_ARCH $GCC_VERSION --push"
+            echo "   REGISTRY_PREFIX=docker.io/yourusername/ $0 $INPUT_ARCH $GCC_VERSION $TARGET --push"
             exit 1
         fi
     fi
